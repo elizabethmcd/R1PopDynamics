@@ -1,15 +1,17 @@
 library(dada2)
 library(phyloseq)
 library(ggplot2)
+library(ampvis2)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
-# forward primer: TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGCCTACGGGNGGCWGCAG
-# reverse primer: GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGGACTACHVGGGTATCTAATCC
+# forward primer: CCTACGGGNGGCWGCAG
+# reverse primer: GACTACHVGGGTATCTAATCC
+# also check that all fastq files and databases aren't in the cloud, will need to pull them down
 
 # primer lengths
-primerF <- "TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGCCTACGGGNGGCWGCAG"
-primerR <- "GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGGACTACHVGGGTATCTAATCC"
+primerF <- "CCTACGGGNGGCWGCAG"
+primerR <- "GACTACHVGGGTATCTAATCC"
 lengthF <- nchar(primerF)
 lengthR <- nchar(primerR)
 
@@ -81,7 +83,13 @@ taxa.print <- taxa
 rownames(taxa.print) <- NULL
 
 # create a phyloseq object
-ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), tax_table(taxa))
+samples.out <- as.data.frame(rownames(seqtab.nochim))
+colnames(samples.out) <- c("timepoint")
+rownames(samples.out) <- rownames(seqtab.nochim)
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(samples.out), tax_table(taxa))
+write.csv(samples.out, "~/Desktop/sludge_samples.csv", quote=FALSE)
+metadata = read.csv("~/Desktop/metadata.csv", row.names = 'X')
+ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(metadata), tax_table(taxa))
 
 # store ASV name
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
@@ -95,25 +103,27 @@ top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
 family <- plot_bar(ps.top20, x="Sample", fill="Family")
+family
 genus <- plot_bar(ps.top20, x="Sample", fill="Genus")
-# top 50
-top50 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:50]
-ps.top50 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top50 <- prune_taxa(top50, ps.top50)
-family50 <- plot_bar(ps.top50, x="Sample", fill="Family")
-genus50 <- plot_bar(ps.top50, x="Sample", fill="Genus")
-# top 100 for fun
-top100 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:100]
-ps.top100 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top100 <- prune_taxa(top100, ps.top100)
-family100 <- plot_bar(ps.top100, x="Sample", fill="Family")
-genus100 <- plot_bar(ps.top100, x="Sample", fill="Genus")
-phyla100 <- plot_bar(ps.top100, x="Sample", fill="Phylum")
 
 # save as a dataframe for now
 OTU1 <- as(otu_table(ps), "matrix")
 if(taxa_are_rows(ps)){OTU1 <- t(OTU1)}
-df <- as.data.frame(OTU1)
+sludgeOTUs <- as.data.frame(OTU1)
 write.csv(df, "data/otu_tables/2019-08-23-DADA2-asv-table.csv", quote=FALSE)
-family50
-genus50
+
+# try all
+all <- names(sort(taxa_sums(ps), decreasing=TRUE))
+ps.all <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+# all levels plots
+allfamily <- plot_bar(ps.all, x="Sample", fill="Family") + theme(legend.position="none")
+
+
+# ampvis
+#source the phyloseq_to_ampvis2() function from the gist
+#devtools::source_gist("8d0ca4206a66be7ff6d76fc4ab8e66c6")
+ampvis2_obj <- phyloseq_to_ampvis2(ps2)
+amp_heatmap(ampvis2_obj, tax_aggregate = "Phylum", tax_show=4, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
+
+amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", tax_show=7, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
+
