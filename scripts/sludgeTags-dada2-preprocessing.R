@@ -2,6 +2,8 @@ library(dada2)
 library(phyloseq)
 library(ggplot2)
 library(ampvis2)
+library(grid)
+library(gridExtra)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
@@ -125,5 +127,46 @@ allfamily <- plot_bar(ps.all, x="Sample", fill="Family") + theme(legend.position
 ampvis2_obj <- phyloseq_to_ampvis2(ps2)
 amp_heatmap(ampvis2_obj, tax_aggregate = "Phylum", tax_show=4, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
 
-amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", tax_show=7, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
+genus <- amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", tax_show=7, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
+cleaned.genus <- genus + theme(legend.position="none", axis.ticks.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 
+accumulibacter <- amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=2, plot_colorscale="sqrt", plot_values = FALSE) + theme(axis.text.y=element_blank(), legend.position="right")
+cleaned.accum <- accumulibacter + theme(legend.position="none", axis.ticks.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+# qPCR data
+ppk = read.table("data/raw_data/Accum-qPCR-Timeseries.csv", sep=',', header=TRUE)
+ppk.df = as.data.frame(ppk)
+ppk.df$Date <- as.Date(df$Date, "%m/%d/%y")
+ # subset of dates
+t1 <- as.Date("2009-01-02")
+t2 <- as.Date("2011-12-02")
+sub <- ppk.df %>% filter(Date>=t1 & Date<=t2)
+sub.m <- melt(sub,id.vars="Date",measure.vars=c("Clade.IA", "Clade.IIA"))
+sub.m$Date <- as.character(sub.m$Date)
+# full timeseries
+full.m <- melt(ppk.df, vars="Date", measure.vars=c("Clade.IA", "Clade.IIA"))
+full.m$Date <- as.character(full.m$Date)
+# subset plot
+p1 <- ggplot(sub.m, aes(x=Date, y=variable, fill=value)) + geom_tile(color="white") + scale_x_discrete(labels=sub.m$Date, position="bottom", expand=c(0,0)) + scale_fill_gradientn(colors = rev(viridis_pal()(9)), limits=c(0,16000000)) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm")) + theme(axis.text.x= element_text(angle=75, hjust=1))
+# clean plot
+p2 <- p1 + theme(axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.ticks.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position="none") + labs(x=NULL, y=NULL) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"))
+# full plot
+f1 <- ggplot(full.m, aes(x=Date, y=variable, fill=value)) + geom_tile(color="white") + scale_x_discrete(labels=full.m$Date, position="bottom", expand=c(0,0)) + scale_fill_gradientn(colors = rev(viridis_pal()(9)), limits=c(0,16000000)) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm")) + theme(axis.text.x= element_text(angle=75, hjust=1))
+f2 <- f1 + theme(axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.ticks.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position="none") + labs(x=NULL, y=NULL) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"))
+
+# stitch 16S and Accumulibacer ASV together
+genus.tmp = ggplot_build(cleaned.genus)
+ppk.tmp = ggplot_build(cleaned.accum)
+g1 = ggplot_gtable(ppk.tmp) ; g2 = ggplot_gtable(genus.tmp)
+n1 = length(ppk.tmp[["panel"]][["ranges"]][[1]][["x.major_source"]])
+n2 = length(genus.tmp[["panel"]][["ranges"]][[1]][["x.major_source"]])
+g = rbind(g1, g2, size="first")
+ggsave(file="~/Desktop/test.png", plot=g, width=100, height=30, units=c("cm"))
+    # can do this when I finish qPCR of the extra 16S samples to put directly on top with ppk1
+    # ppk1 data instead of the ASV of Accumulibacter IA and IIA abundant ones
+p1
+
+# save qPCR plots
+ggsave(file="~/Desktop/ppk1.png", plot=p1, width=30, height=10, units=c('cm'))
+ggsave(file="~/Desktop/full-ppk1.png", plot=f2, width=60, height=5, units=c('cm'))
+ggsave(file="~/Desktop/full-ppk1-legend.png", plot=f1, width=60, height=5, units=c('cm'))
