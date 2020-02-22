@@ -4,6 +4,7 @@ library(ggplot2)
 library(ampvis2)
 library(grid)
 library(gridExtra)
+library(vegan)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
@@ -84,7 +85,9 @@ taxa <- addSpecies(taxa, "databases/silva_species_assignment_v132.fa.gz")
 taxa.print <- taxa
 rownames(taxa.print) <- NULL
 
+####################################
 # create a phyloseq object
+####################################
 samples.out <- as.data.frame(rownames(seqtab.nochim))
 colnames(samples.out) <- c("timepoint")
 rownames(samples.out) <- rownames(seqtab.nochim)
@@ -92,12 +95,62 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(sample
 write.csv(samples.out, "~/Desktop/sludge_samples.csv", quote=FALSE)
 metadata = read.csv("~/Desktop/metadata.csv", row.names = 'X')
 ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(metadata), tax_table(taxa))
-
 # store ASV name
 dna <- Biostrings::DNAStringSet(taxa_names(ps))
 names(dna) <- taxa_names(ps)
 ps <- merge_phyloseq(ps, dna)
 taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
+
+####################################
+# basic statistics
+####################################
+# average Bray-Curtis dissimilarity for each sample
+pairBray <- distance(ps, "bray")
+braycalc <- as.matrix(pairBray)
+avg <- colMeans(braycalc)
+result <- rbind(braycalc, avg)
+# average bray curtis dissim over time
+avg_bc <- rownames_to_column(as.data.frame(avg))
+colnames(avg_bc) <- c("Sample", "BC")
+avg_bc %>% ggplot(aes(x=Sample, y=BC, group=1)) + geom_point() + geom_line() + theme_classic() + theme(axis.text.x = element_text(angle=85, hjust=1))
+braydf <- rownames_to_column(as.data.frame(braycalc))
+colnames(braydf) <- c("")
+# select first subset of samples before reseeding event
+samples <- c("R1-2009-01-02",
+             "R1-2009-01-16",
+             "R1-2009-02-05",
+             "R1-2009-02-20",
+             "R1-2009-03-02",
+             "R1-2009-03-19",
+             "R1-2009-04-06",
+             "R1-2009-04-23",
+             "R1-2009-05-04",
+             "R1-2009-05-21",
+             "R1-2009-06-01",
+             "R1-2009-06-18",
+             "R1-2009-07-01",
+             "R1-2009-08-03",
+             "R1-2009-08-20",
+             "R1-2009-09-08",
+             "R1-2009-09-21",
+             "R1-2009-10-05",
+             "R1-2009-10-19",
+             "R1-2009-11-02",
+             "R1-2009-11-16",
+             "R1-2009-12-01",
+             "R1-2009-12-18")
+ps_pruned <- prune_samples(samples, ps)
+prunedBray <- distance(ps_pruned, "bray")
+prunedcalc <- as.matrix(prunedBray)
+prunedavg <- colMeans(prunedcalc)
+prunedresult <- rbind(prunedcalc, prunedavg)
+avg_pruned_bc <- rownames_to_column(as.data.frame(prunedavg))
+colnames(avg_pruned_bc) <- c("sample", "BC")
+avg_pruned_bc %>% ggplot(aes(x=sample, y=BC, group=1)) + geom_point() + geom_line() + theme_classic() + theme(axis.text.x = element_text(angle=85, hjust=1))
+
+####################################
+# visualization with bar charts and heatmaps
+####################################
 
 # some terrible bar charts
 # top 20

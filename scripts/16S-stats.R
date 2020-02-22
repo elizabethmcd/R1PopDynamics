@@ -4,7 +4,8 @@ library(tidyverse)
 
 # otu table
 sludge <- read.csv("data/otu_tables/2019-08-23-DADA2-asv-table.csv")
-# after running cohesion, comparing turnover rates with connectivity and sample cohesion over time
+metadata <-read.csv("~/Desktop/metadata.csv", row.names = 'X')
+ps <- phyloseq(otu_table(sludge, taxa_are_rows=FALSE), sample_data(metadata))
 
 # average Bray-Curtis dissimilarity for each sample
 pairBray <- distance(ps, "bray")
