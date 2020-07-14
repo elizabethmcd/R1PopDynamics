@@ -1,0 +1,15 @@
+#####################
+# Coassemble metagenomic samples using metahit
+# Elizabeth McDaniel 
+#####################
+
+request_cpus = 16
+request_memory = 600GB
+
+executable = /home/GLBRCORG/emcdaniel/EBPR/Flanking/executables/2010_spades_coassembly.sh
+
+output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(Cluster)_$(Process)_spades_coassembly.out
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_spades_coassembly.err
+log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(Cluster)_$(Process)_spades_coassembly.log
+
+queue
