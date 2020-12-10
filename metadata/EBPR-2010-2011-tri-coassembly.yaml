@@ -1,0 +1,4 @@
+[
+ {orientation: "fr", type: "paired-end", interlaced reads: ["/home/GLBRCORG/emcdaniel/EBPR/Flanking/metagenomes/cleaned_fastqs/2010-07-15-EBPR.qced.fastq","/home/GLBRCORG/emcdaniel/EBPR/Flanking/metagenomes/cleaned_fastqs/2010-10-04-EBPR.qced.fastq","/home/GLBRCORG/emcdaniel/EBPR/Flanking/metagenomes/cleaned_fastqs/2011-01-10-EBPR.qced.fastq"]
+ }
+]

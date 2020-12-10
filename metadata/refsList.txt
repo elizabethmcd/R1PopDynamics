@@ -1,0 +1,11 @@
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300009517.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026282.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026283.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026284.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026286.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026287.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026288.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026289.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026299.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026302.a.fna
+/home/GLBRCORG/emcdaniel/EBPR/Flanking/assemblies/3300026303.a.fna
