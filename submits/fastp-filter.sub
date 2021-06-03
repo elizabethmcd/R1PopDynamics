@@ -1,0 +1,17 @@
+##################
+# fastp_filter.sub
+# Submission script for filtering metagenomic sequences with fastp
+# Elizabeth McDaniel
+##################
+
+request_cpus = 4
+request_memory = 15GB
+
+executable = /home/GLBRCORG/emcdaniel/EBPR/Flanking/executables/fastp-filter.sh
+arguments = $(sample) $(r1) $(r2)
+
+output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(Cluster)_$(Process)_$(sample)_filter.out
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_$(sample)_filter.err
+log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(Cluster)_$(Process)_$(sample)_filter.log
+
+queue sample,r1,r2 from metadata/R1-Flanking-metagenomes-qc-queue.txt

@@ -1,0 +1,15 @@
+######################
+# Queue single assemblies with SPAdes on WEI GLBRC
+######################
+
+request_cpus = 16
+request_memory = 900GB
+
+executable = /home/GLBRCORG/emcdaniel/EBPR/Flanking/executables/spades_single_assembly.sh
+arguments = $(sample) $(r1) $(r2)
+
+output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(sample)_assemble.out
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(sample)_assemble.err
+log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(sample)_assemble.log
+
+queue sample,r1,r2 from metadata/flanking-assemblies-queue.txt

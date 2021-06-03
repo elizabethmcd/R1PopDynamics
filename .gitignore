@@ -1,3 +1,6 @@
+sample_*/
+results/
+qPCR_runs/
 raw_data/
 *.icloud
 data/

@@ -19,9 +19,9 @@ lengthF <- nchar(primerF)
 lengthR <- nchar(primerR)
 
 # path and files setup
-path <- "SludgeTags/raw"
-fnFs <- sort(list.files(path, pattern="_L001_R1_001.fastq", full.names=TRUE))
-fnRs <- sort(list.files(path, pattern="_L001_R2_001.fastq", full.names=TRUE))
+path <- "raw_data/FlankingTags2010/raw_data"
+fnFs <- sort(list.files(path, pattern="_L001_R1_001.fastq.gz", full.names=TRUE))
+fnRs <- sort(list.files(path, pattern="_L001_R2_001.fastq.gz", full.names=TRUE))
 sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 
 # inspect quality profiles of a couple forward/reverse reads
@@ -32,10 +32,10 @@ plotQualityProfile(fnRs[1:2])
 # the forward reads look really good up until the end
 # the reverse reads really crap out around 210, which is expected for reverse Illumina reads and with the 2x250/300 chemistry
 # sequencing done on V3-V4 region with 2x300 chemistry instead of 2x250
-# cut forward to 275, cut reverse to 200, need to check overlap length
+# cut forward to 290, cut reverse to 215, need to check overlap length
 
-filtFs <- file.path("SludgeTags/filtered", paste0(sample.names, "_F_filt.fastq.gz"))
-filtRs <- file.path("SludgeTags/filtered", paste0(sample.names,"_R_filt.fastq.gz"))
+filtFs <- file.path("raw_data/FlankingTags2010/filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path("raw_data/FlankingTags2010/filtered", paste0(sample.names,"_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(290,215), maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE, trimLeft = c(lengthF, lengthR))
@@ -73,6 +73,7 @@ getN <- function(x) sum(getUniques(x))
 track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
 colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
 rownames(track) <- sample.names
+track
 # if a lot of reads are removed as chimeric, have to check the removal of primers, ambiguous nucleotides in unremoved primers can interfere with ID'ing chimeras
 # when account for quality and trimming off left sides for primers, gets the most sequences merged with a good matching overlap and least amount of chimeric sequences
 
