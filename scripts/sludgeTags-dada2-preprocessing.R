@@ -5,6 +5,7 @@ library(ampvis2)
 library(grid)
 library(gridExtra)
 library(vegan)
+library(tidyverse)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
@@ -78,13 +79,14 @@ track
 # when account for quality and trimming off left sides for primers, gets the most sequences merged with a good matching overlap and least amount of chimeric sequences
 
 # taxa assigned with silva, general and exact species
-taxa <- assignTaxonomy(seqtab.nochim, "databases/silva_nr_v132_train_set.fa.gz", multithread=FALSE)
-taxa <- addSpecies(taxa, "databases/silva_species_assignment_v132.fa.gz")
+taxa <- assignTaxonomy(seqtab.nochim, "databases/silva_nr99_v138.1_train_set.fa.gz", multithread=FALSE)
+taxa <- addSpecies(taxa, "databases/silva_species_assignment_v138.1.fa.gz")
 # taxa assigned with GTDB taxonomy, general and exact species
 # gtdb_taxa <- assignTaxonomy(seqtab.nochim, "databases/GTDB_bac-arc_ssu_r86.fa.gz", multithread=FALSE)
 # gtdb_taxa <- addSpecies(gtdb_taxa, "databases/GTDB_dada2_assignment_species.fa.gz")
 taxa.print <- taxa
 rownames(taxa.print) <- NULL
+taxa.print
 
 ####################################
 # create a phyloseq object
@@ -93,134 +95,25 @@ samples.out <- as.data.frame(rownames(seqtab.nochim))
 colnames(samples.out) <- c("timepoint")
 rownames(samples.out) <- rownames(seqtab.nochim)
 ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(samples.out), tax_table(taxa))
-write.csv(samples.out, "~/Desktop/sludge_samples.csv", quote=FALSE)
-metadata = read.csv("~/Desktop/metadata.csv", row.names = 'X')
-ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(metadata), tax_table(taxa))
-# store ASV name
-dna <- Biostrings::DNAStringSet(taxa_names(ps))
-names(dna) <- taxa_names(ps)
-ps <- merge_phyloseq(ps, dna)
-taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
 
-####################################
-# basic statistics
-####################################
-# average Bray-Curtis dissimilarity for each sample
-pairBray <- distance(ps, "bray")
-braycalc <- as.matrix(pairBray)
-avg <- colMeans(braycalc)
-result <- rbind(braycalc, avg)
-# average bray curtis dissim over time
-avg_bc <- rownames_to_column(as.data.frame(avg))
-colnames(avg_bc) <- c("Sample", "BC")
-avg_bc %>% ggplot(aes(x=Sample, y=BC, group=1)) + geom_point() + geom_line() + theme_classic() + theme(axis.text.x = element_text(angle=85, hjust=1))
-braydf <- rownames_to_column(as.data.frame(braycalc))
-colnames(braydf) <- c("")
-# select first subset of samples before reseeding event
-samples <- c("R1-2009-01-02",
-             "R1-2009-01-16",
-             "R1-2009-02-05",
-             "R1-2009-02-20",
-             "R1-2009-03-02",
-             "R1-2009-03-19",
-             "R1-2009-04-06",
-             "R1-2009-04-23",
-             "R1-2009-05-04",
-             "R1-2009-05-21",
-             "R1-2009-06-01",
-             "R1-2009-06-18",
-             "R1-2009-07-01",
-             "R1-2009-08-03",
-             "R1-2009-08-20",
-             "R1-2009-09-08",
-             "R1-2009-09-21",
-             "R1-2009-10-05",
-             "R1-2009-10-19",
-             "R1-2009-11-02",
-             "R1-2009-11-16",
-             "R1-2009-12-01",
-             "R1-2009-12-18")
-ps_pruned <- prune_samples(samples, ps)
-prunedBray <- distance(ps_pruned, "bray")
-prunedcalc <- as.matrix(prunedBray)
-prunedavg <- colMeans(prunedcalc)
-prunedresult <- rbind(prunedcalc, prunedavg)
-avg_pruned_bc <- rownames_to_column(as.data.frame(prunedavg))
-colnames(avg_pruned_bc) <- c("sample", "BC")
-avg_pruned_bc %>% ggplot(aes(x=sample, y=BC, group=1)) + geom_point() + geom_line() + theme_classic() + theme(axis.text.x = element_text(angle=85, hjust=1))
+# merge with sample information
+# P date, operation day, SRT
+sample_info <- read.csv("metadata/reactor_metadata/r1_subset_chemical_data_2010_2013.csv") %>% 
+  select(Date, P_release, P_uptake, percent_P_removal, operation_day, SRT)
+colnames(sample_info)[1] <- c("timepoint")
 
-####################################
-# visualization with bar charts and heatmaps
-####################################
+samples.out$timepoint <- gsub("R1-", "", samples.out$timepoint)
+sample_metadata <- left_join(samples.out, sample_info)
+sample_metadata$timepoint <- Map(paste, 'R1-', sample_metadata$timepoint)
+row.names(sample_metadata) <- sample_metadata$timepoint
+row.names(sample_metadata) <- gsub(" ", "", row.names(sample_metadata))
+sample_metadata$timepoint <- gsub(" ", "", sample_metadata$timepoint)
 
-# some terrible bar charts
-# top 20
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-family <- plot_bar(ps.top20, x="Sample", fill="Family")
-family
-genus <- plot_bar(ps.top20, x="Sample", fill="Genus")
+# phyloseq object with metadata
+ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(sample_metadata), tax_table(taxa))
 
-# save as a dataframe for now
-OTU1 <- as(otu_table(ps), "matrix")
-if(taxa_are_rows(ps)){OTU1 <- t(OTU1)}
-sludgeOTUs <- as.data.frame(OTU1)
-write.csv(df, "data/otu_tables/2019-08-23-DADA2-asv-table.csv", quote=FALSE)
+# Alpha diversity / Shannon diversity richness within samples
 
-# try all
-all <- names(sort(taxa_sums(ps), decreasing=TRUE))
-ps.all <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-# all levels plots
-allfamily <- plot_bar(ps.all, x="Sample", fill="Family") + theme(legend.position="none")
+shannon_timeseries <- plot_richness(ps2, x="operation_day", measure="Shannon") + scale_x_continuous(expand=c(0,0), limits=c(0,1200), breaks=seq(0,1200,30)) + xlab(label="Operation Day") + ylab('Shannon Alpha Diversity Measure') + theme_bw() + theme(axis.title.x=element_text(face="bold", size=10), axis.title.y=element_text(face="bold", size=10), strip.background=element_blank(), strip.text.x=element_blank(), plot.title=element_text(size=12, face="bold"), axis.text.x=element_text(size=8))
 
-
-# ampvis
-#source the phyloseq_to_ampvis2() function from the gist
-#devtools::source_gist("8d0ca4206a66be7ff6d76fc4ab8e66c6")
-ampvis2_obj <- phyloseq_to_ampvis2(ps2)
-amp_heatmap(ampvis2_obj, tax_aggregate = "Phylum", tax_show=4, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
-
-genus <- amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", tax_show=7, plot_colorscale = "sqrt", plot_values = FALSE) + theme(axis.text.y = element_text(size=8), legend.position="right")
-cleaned.genus <- genus + theme(legend.position="none", axis.ticks.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
-
-accumulibacter <- amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=2, plot_colorscale="sqrt", plot_values = FALSE) + theme(axis.text.y=element_blank(), legend.position="right")
-cleaned.accum <- accumulibacter + theme(legend.position="none", axis.ticks.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
-
-# qPCR data
-ppk = read.table("data/raw_data/Accum-qPCR-Timeseries.csv", sep=',', header=TRUE)
-ppk.df = as.data.frame(ppk)
-ppk.df$Date <- as.Date(df$Date, "%m/%d/%y")
- # subset of dates
-t1 <- as.Date("2009-01-02")
-t2 <- as.Date("2011-12-02")
-sub <- ppk.df %>% filter(Date>=t1 & Date<=t2)
-sub.m <- melt(sub,id.vars="Date",measure.vars=c("Clade.IA", "Clade.IIA"))
-sub.m$Date <- as.character(sub.m$Date)
-# full timeseries
-full.m <- melt(ppk.df, vars="Date", measure.vars=c("Clade.IA", "Clade.IIA"))
-full.m$Date <- as.character(full.m$Date)
-# subset plot
-p1 <- ggplot(sub.m, aes(x=Date, y=variable, fill=value)) + geom_tile(color="white") + scale_x_discrete(labels=sub.m$Date, position="bottom", expand=c(0,0)) + scale_fill_gradientn(colors = rev(viridis_pal()(9)), limits=c(0,16000000)) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm")) + theme(axis.text.x= element_text(angle=75, hjust=1))
-# clean plot
-p2 <- p1 + theme(axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.ticks.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position="none") + labs(x=NULL, y=NULL) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"))
-# full plot
-f1 <- ggplot(full.m, aes(x=Date, y=variable, fill=value)) + geom_tile(color="white") + scale_x_discrete(labels=full.m$Date, position="bottom", expand=c(0,0)) + scale_fill_gradientn(colors = rev(viridis_pal()(9)), limits=c(0,16000000)) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm")) + theme(axis.text.x= element_text(angle=75, hjust=1))
-f2 <- f1 + theme(axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.ticks.x=element_blank(), axis.text.x=element_blank()) + theme(legend.position="none") + labs(x=NULL, y=NULL) + theme(panel.grid = element_blank(), panel.border = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"))
-
-# stitch 16S and Accumulibacer ASV together
-genus.tmp = ggplot_build(cleaned.genus)
-ppk.tmp = ggplot_build(cleaned.accum)
-g1 = ggplot_gtable(ppk.tmp) ; g2 = ggplot_gtable(genus.tmp)
-n1 = length(ppk.tmp[["panel"]][["ranges"]][[1]][["x.major_source"]])
-n2 = length(genus.tmp[["panel"]][["ranges"]][[1]][["x.major_source"]])
-g = rbind(g1, g2, size="first")
-ggsave(file="~/Desktop/test.png", plot=g, width=100, height=30, units=c("cm"))
-    # can do this when I finish qPCR of the extra 16S samples to put directly on top with ppk1
-    # ppk1 data instead of the ASV of Accumulibacter IA and IIA abundant ones
-p1
-
-# save qPCR plots
-ggsave(file="~/Desktop/ppk1.png", plot=p1, width=30, height=10, units=c('cm'))
-ggsave(file="~/Desktop/full-ppk1.png", plot=f2, width=60, height=5, units=c('cm'))
-ggsave(file="~/Desktop/full-ppk1-legend.png", plot=f1, width=60, height=5, units=c('cm'))
+ggsave("figs/R1-shannon-timeseries.png", shannon_timeseries, width=14, height=4, units=c("in"))

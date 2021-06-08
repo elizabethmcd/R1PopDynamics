@@ -3,6 +3,7 @@ library(readxl)
 library(reshape2)
 library(viridis)
 library(patchwork)
+library(cowplot)
 
 # R1R2 metadata
 
@@ -147,17 +148,25 @@ sub_r1_inventory_data <- r1_inventory_data %>%  filter(Date>=t1 & Date<=t2)
 
 sub_r1_clean$P_release <- ifelse(sub_r1_clean$P_release > 100, 100, sub_r1_clean$P_release)
 
+r1_clean_gathered <- sub_r1_clean %>% 
+  select(operation_day, P_release, P_uptake) %>% 
+  gather(key="variable", value="value", -operation_day)
+
 qPCR_metadata <- left_join(sub_qPCR, sub_r1_clean) %>% filter_all(all_vars(!is.na(.)))
 
-p_data <- sub_r1_clean %>% ggplot(aes(x=operation_day)) + geom_line(aes(y=P_release), colour="#4D3F83", size=1.2) + geom_line(aes(y=P_uptake), colour="#0FA1D8", size=1.2) + scale_x_continuous(breaks=seq(0,1220, by=50), expand=c(0,0), limits=c(0,1220)) + theme_classic()
+p_data <- r1_clean_gathered %>% ggplot(aes(x=operation_day, y=value)) + geom_line(aes(color=variable), size=1.4) + scale_color_manual(values=c("#4D3F83", "#0FA1D8"), labels=c("Total P Release at \n end of Anaerobic Phase \n", "Total P Remaining at \n end of Aerobic Phase")) + scale_x_continuous(breaks=seq(0,1220, by=30), expand=c(0,0), limits=c(0,1220)) + xlab("Operation Day") + ylab("Phosphorus (mg/L)") + theme_classic() + theme(axis.text.y=element_text(size=10), axis.title.x=element_blank(), axis.title.y=element_text(size=14, face="bold"), legend.title=element_blank(), legend.position=c(0.15,0.9), legend.text=element_text(size=12),axis.text.x=element_text(size=11), axis.text.y.left=element_text(size=12))
+p_data
 
 clade_operation <- qPCR_metadata %>% select(Clade.IA, Clade.IIA, operation_day)
 
 operation.m <- melt(clade_operation,id.vars="operation_day",measure.vars=c("Clade.IA", "Clade.IIA"))
 operation.m$operation_day <- as.numeric(operation.m$operation_day)
 
-clade_data <- operation.m %>% ggplot(aes(x=operation_day, y=value, group=variable)) + geom_line(aes(linetype=variable), size=1.2) + scale_x_continuous(breaks=seq(0,1220, by=50), expand=c(0,0), limits=c(0,1220)) + theme_classic()
+clade_data <- operation.m %>% ggplot(aes(x=operation_day, y=value, group=variable)) + geom_point(size=1.4) + geom_line(aes(linetype=variable), size=1.4) + scale_linetype_manual(values=c("solid", "twodash"), labels=c("Clade IA", "Clade IIA")) + scale_x_continuous(breaks=seq(0,1220, by=30), expand=c(0,0), limits=c(0,1220)) + scale_y_continuous(limits=c(0,1.5e7), breaks=seq(0,1.5e7, 2.5e6), labels=c("0","2.5e+06", "5.0e+06", "7.5e+06", "1.0e+07", "1.25e+07", "1.5e+07")) + xlab("\nOperation Day") + ylab("Copies/ng DNA") + theme_classic() + theme(axis.title.x=element_text(size=14, face="bold"), axis.title.y=element_text(size=14, face="bold"), legend.title=element_blank(), legend.position=c(0.15,0.9), legend.text=element_text(size=12),axis.text.x=element_text(size=11), axis.text.y=element_text(size=12))
+
+clade_data
 
 r1_dynamics <- p_data / clade_data
+r2 <- r1_dynamics + plot_annotation(tag_levels="A", tag_sep=".") & theme(plot.tag=element_text(size=16, face="bold", hjust=0.1, vjust=0.2))
 
-ggsave("figs/R1_2010_2013_p_clade_data.png", r1_dynamics, width=25, height=15, units=c("cm"))
+ggsave("figs/R1_2010_2013_p_clade_data_modified.png", r2, width=17, height=10, units=c("in"))
