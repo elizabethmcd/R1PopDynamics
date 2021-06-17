@@ -1,0 +1,17 @@
+##################
+# reformat-fastq.sub
+# Reformat PE reads to interleaved
+# Elizabeth McDaniel
+##################
+
+request_cpus = 4
+request_memory = 15GB
+
+executable = /home/GLBRCORG/emcdaniel/EBPR/Flanking/executables/reformat-fastq.sh
+arguments = $(r1) $(r2) $(sample)
+
+output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(Cluster)_$(Process)_$(sample)_reformat.out
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_$(sample)_reformat.err
+log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(Cluster)_$(Process)_$(sample)_reformat.log
+
+queue r1,r2,sample from metadata/R1-Flanking-metagenomes-reformat.txt

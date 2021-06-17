@@ -6,6 +6,8 @@ library(grid)
 library(gridExtra)
 library(vegan)
 library(tidyverse)
+library(patchwork)
+library(cowplot)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
@@ -114,6 +116,25 @@ ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(sampl
 
 # Alpha diversity / Shannon diversity richness within samples
 
-shannon_timeseries <- plot_richness(ps2, x="operation_day", measure="Shannon") + scale_x_continuous(expand=c(0,0), limits=c(0,1200), breaks=seq(0,1200,30)) + xlab(label="Operation Day") + ylab('Shannon Alpha Diversity Measure') + theme_bw() + theme(axis.title.x=element_text(face="bold", size=10), axis.title.y=element_text(face="bold", size=10), strip.background=element_blank(), strip.text.x=element_blank(), plot.title=element_text(size=12, face="bold"), axis.text.x=element_text(size=8))
+shannon_timeseries <- plot_richness(ps2, x="operation_day", measure="Shannon") + scale_x_continuous(expand=c(0,0), limits=c(0,1200), breaks=seq(0,1175,30)) + xlab(label="Operation Day") + ylab('Shannon\n Alpha Diversity\n') + theme_bw() + theme(axis.title.x=element_text(face="bold", size=7), axis.title.y=element_text(face="bold", size=7), strip.background=element_blank(), strip.text.x=element_blank(), plot.title=element_text(size=12, face="bold"), axis.text.x=element_text(size=6), axis.text.y=element_text(size=6))
+shannon_timeseries
 
 ggsave("figs/R1-shannon-timeseries.png", shannon_timeseries, width=14, height=4, units=c("in"))
+
+# ampvis
+#source the phyloseq_to_ampvis2() function from the gist
+#devtools::source_gist("8d0ca4206a66be7ff6d76fc4ab8e66c6")
+ampvis2_obj <- phyloseq_to_ampvis2(ps2)
+
+r1_genus_plot <- amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", group_by="operation_day", tax_add="Phylum", tax_show=8, plot_values = FALSE, plot_legendbreaks=c(0.1,1,10,60)) + scale_y_discrete(labels=c("Actinobacteria; Tetrasphaera", "Actinobacteria; Leucobacter", "Proteobacteria; Brevundimonas", "Proteobacteria; Diaphorobacter", "Proteobacteria; Pseudoxanthomonas", "Proteobacteria; Gemmobacter", "Bacteroidetes; Chryseobacterium", "Candidatus Accumulibacter")) + theme(axis.text.y = element_text(face="bold.italic", size=6), legend.position="right") + theme(axis.text.x=element_text(angle=80, size=6, vjust=1))
+r1_genus_plot
+
+amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=20, plot_values=FALSE, group_by="operation_day") + theme(axis.text.y=element_blank())
+
+amp_boxplot(ampvis2_obj, tax_show=8)
+
+ggsave(filename="figs/r1-ampvis2-genus-plot-heatmap.png", r1_genus_plot, width=16, height=3, units=c("in"))
+
+p1 <- plot_grid(r1_genus_plot, shannon_timeseries, ncol=1, labels=c("A", "B"), label_size=10, vjust=1)
+
+ggsave(filename="figs/16S-heatmap-shannon-grid.png", p1, height=4, width=10, units=c("in"))

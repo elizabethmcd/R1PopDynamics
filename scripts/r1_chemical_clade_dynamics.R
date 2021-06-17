@@ -168,5 +168,6 @@ clade_data
 
 r1_dynamics <- p_data / clade_data
 r2 <- r1_dynamics + plot_annotation(tag_levels="A", tag_sep=".") & theme(plot.tag=element_text(size=16, face="bold", hjust=0.1, vjust=0.2))
+r2
 
 ggsave("figs/R1_2010_2013_p_clade_data_modified.png", r2, width=17, height=10, units=c("in"))
