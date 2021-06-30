@@ -121,6 +121,10 @@ shannon_timeseries
 
 ggsave("figs/R1-shannon-timeseries.png", shannon_timeseries, width=14, height=4, units=c("in"))
 
+# subset taxa to only include Accumulibacter ASVs
+accumulibacter_ps <- subset_taxa(ps2, Genus=="Candidatus_Accumulibacter")
+plot_richness(accumulibacter_ps, x="operation_day", measures="Shannon") + scale_x_continuous(expand=c(0,0), limits=c(0,1200), breaks=seq(0,1175,30)) + xlab(label="Operation Day") + ylab('Shannon\n Alpha Diversity\n') + theme_bw() + theme(axis.title.x=element_text(face="bold", size=7), axis.title.y=element_text(face="bold", size=7), strip.background=element_blank(), strip.text.x=element_blank(), plot.title=element_text(size=12, face="bold"), axis.text.x=element_text(size=6), axis.text.y=element_text(size=6))
+
 # ampvis
 #source the phyloseq_to_ampvis2() function from the gist
 #devtools::source_gist("8d0ca4206a66be7ff6d76fc4ab8e66c6")
