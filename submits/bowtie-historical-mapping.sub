@@ -9,7 +9,7 @@ request_memory = 150GB
 arguments = $(sample)
 
 output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(Cluster)_$(Process)_bowtie_historical_mapping.out
-error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_bowtie__historical_mapping.err
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_bowtie_historical_mapping.err
 log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(Cluster)_$(Process)_bowtie_historical_mapping.log
 
 queue sample from metadata/metagenomeList.txt
