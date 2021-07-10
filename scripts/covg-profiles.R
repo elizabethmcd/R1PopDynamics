@@ -1,7 +1,10 @@
 library(tidyverse)
 library(viridis)
+library(RColorBrewer)
+library(gridGraphics)
+library(cowplot)
 
-# Coverage and relative abundance calculations and plots
+# Coverage, relative abundance calculations, and within sample diversity and plots
 
 # Coverage stats for 10 metagenomes sequenced from specific time points for SNV profiling of these genomes that meet cutoffs
 
@@ -62,6 +65,41 @@ metagenome_info <- read.csv("metadata/metagenome_information/R1_Flanking_Metageo
 rel_abundance_info <- left_join(rel_abund_metadata, metagenome_info) %>% 
   select(operation_day, Genome, relative_abundance, Code)
 
-rel_abundance_info %>% ggplot(aes(x=as_factor(operation_day), y=relative_abundance, fill=Code)) + geom_bar(stat="identity", color="black", size=0.3, width=0.8) + scale_fill_brewer(palette="Set3", labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + theme_classic() + scale_y_continuous(expand=c(0,0), limits=c(0,100), breaks=seq(0,100,25)) + ylab("% Relative Abundance") + xlab("Operation Day") + labs(fill="Genome Lineage") + theme(axis.text.y=element_text(size=10, face="bold"), axis.text.x=element_text(size=10, face="bold"), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(size=10, face="bold"))
+manual_brewer_palette <- c("#8DD3C7", "#FFED6F", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#FCCDE5")
+
+flanking_abundance <- rel_abundance_info %>% ggplot(aes(x=as_factor(operation_day), y=relative_abundance, fill=Code)) + geom_bar(stat="identity", color="black", size=0.3, width=0.8) + scale_fill_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + theme_classic() + scale_y_continuous(expand=c(0,0), limits=c(0,100), breaks=seq(0,100,25)) + ylab("% Relative Abundance") + xlab("Operation Day") + labs(fill="Genome Lineage") + theme(axis.text.y=element_text(size=10, face="bold"), axis.text.x=element_text(size=10, face="bold"), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(size=10, face="bold"))
 
 rel_abund_metadata %>% ggplot(aes(x=sample, fill=Code)) + geom_area(stat="count")
+
+# Within-sample nucleotide diversity for genomes in samples that are above 10X coverage 
+
+files_path <- "results/SNV_diversity/diversity"
+files <- dir(files_path, pattern="*_genome_info.tsv")
+
+diversity_files <- data_frame(filename = files) %>%
+  mutate(file_contents = map(filename, ~ read_tsv(file.path(files_path, .)))) %>% 
+  unnest() %>% 
+  select(filename, genome, coverage, nucl_diversity)
+
+diversity_table <- separate(diversity_files, filename, into=c("reference", "sample"), sep="-R1-") %>% 
+  select(genome, sample, coverage, nucl_diversity) 
+
+diversity_table$sample <- gsub("-inStrain.IS_genome_info.tsv", "", diversity_table$sample)
+diversity_table$genome <- gsub(".fa", "", diversity_table$genome)
+
+diversity_table_filtered <- diversity_table %>% 
+  filter(coverage > 10)
+colnames(diversity_table_filtered)[1] <- "Genome"
+
+diversity_table_info <- left_join(diversity_table_filtered, metadata)
+diversity_table_final <- left_join(diversity_table_info, metagenome_info)
+
+flanking_nucleotide_diversity <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Code)) + geom_point(size=3, alpha=0.8) + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + scale_y_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + ylab("Nucleotide Diveristy π") + xlab("Operation Day") + labs(fill="Genome Lineage") + theme_classic()  + theme(axis.text.y=element_text(size=10, face="bold"), axis.text.x=element_text(size=10, face="bold"), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(size=10, face="bold"))
+
+diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Genome)) + geom_point() + facet_wrap(~ Code, nrow=2) + theme_bw() + theme(legend.position = "none")
+
+flanking_abund_div_grid <- plot_grid(flanking_abundance, flanking_nucleotide_diversity, labels=c("B", "C"), ncol=1)
+
+ggsave("figs/flanking-abund-div-grid.png", flanking_abund_div_grid, width=10, height=8, units=c("in"))
+
+flanking_nucleotide_diversity
