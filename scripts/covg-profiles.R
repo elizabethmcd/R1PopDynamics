@@ -94,12 +94,17 @@ colnames(diversity_table_filtered)[1] <- "Genome"
 diversity_table_info <- left_join(diversity_table_filtered, metadata)
 diversity_table_final <- left_join(diversity_table_info, metagenome_info)
 
-flanking_nucleotide_diversity <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Code)) + geom_point(size=3, alpha=0.8) + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + scale_y_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + ylab("Nucleotide Diveristy π") + xlab("Operation Day") + labs(fill="Genome Lineage") + theme_classic()  + theme(axis.text.y=element_text(size=10, face="bold"), axis.text.x=element_text(size=10, face="bold"), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(size=10, face="bold"))
+flanking_nucleotide_diversity <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Code)) + geom_point(size=3, alpha=0.8) + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + scale_y_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + ylab("Nucleotide Diveristy π") + xlab("Operation Day") + labs(color="Genome Lineage") + theme_classic()  + theme(axis.text.y=element_text(size=10, face="bold"), axis.text.x=element_text(size=10, face="bold"), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(size=10, face="bold"))
+
+diversity_abundance <- left_join(diversity_table_final, rel_abundance_info, by=c("Genome", "operation_day")) %>% 
+  select(Genome, sample, operation_day, relative_abundance, nucl_diversity, coverage, Code.x)
+
+diversity_abundance %>% ggplot(aes(x=nucl_diversity, y=relative_abundance, color=Code.x)) + geom_point() + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + theme_classic()
 
 diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Genome)) + geom_point() + facet_wrap(~ Code, nrow=2) + theme_bw() + theme(legend.position = "none")
 
 flanking_abund_div_grid <- plot_grid(flanking_abundance, flanking_nucleotide_diversity, labels=c("B", "C"), ncol=1)
 
-ggsave("figs/flanking-abund-div-grid.png", flanking_abund_div_grid, width=10, height=8, units=c("in"))
+ggsave("figs/flanking-abund-div-grid.png", flanking_abund_div_grid, width=10, height=6, units=c("in"))
 
 flanking_nucleotide_diversity
