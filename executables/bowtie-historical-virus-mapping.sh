@@ -19,7 +19,6 @@ cd /home/GLBRCORG/emcdaniel/EBPR/Flanking/ref_genomes/relative_abundance/mapping
 # mapping command
 /opt/bifxapps/bowtie2-2.3.5.1/bowtie2 --threads 6 -x /home/GLBRCORG/emcdaniel/EBPR/Flanking/ref_genomes/relative_abundance/historical_virus_bt2/historical_virus.fasta --interleaved $sample > $outname.sam
 
-
 # BAM, sort, index
 samtools view -S -b $outname.sam >  $outname.bam
 samtools sort $outname.bam -o  $outname.sorted.bam

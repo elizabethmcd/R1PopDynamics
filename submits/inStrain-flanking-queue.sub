@@ -1,0 +1,15 @@
+##############################
+# inStrain profiles
+##############################
+
+executable = /home/GLBRCORG/emcdaniel/EBPR/Flanking/executables/inStrain-flanking-queue.sh
+
+request_cpus = 6
+request_memory = 150GB
+arguments = $(mapping) $(genome)
+
+output = /home/GLBRCORG/emcdaniel/EBPR/Flanking/outs/$(Cluster)_$(Process)_inStrain_profile.out
+error = /home/GLBRCORG/emcdaniel/EBPR/Flanking/errs/$(Cluster)_$(Process)_inStrain_profile.err
+log = /home/GLBRCORG/emcdaniel/EBPR/Flanking/logs/$(Cluster)_$(Process)_inStrain_profile.log
+
+queue mapping,genome from metadata/good-genomes-covg-list.txt
