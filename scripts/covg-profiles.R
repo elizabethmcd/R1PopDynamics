@@ -99,12 +99,17 @@ flanking_nucleotide_diversity <- diversity_table_final %>% ggplot(aes(x=as_facto
 diversity_abundance <- left_join(diversity_table_final, rel_abundance_info, by=c("Genome", "operation_day")) %>% 
   select(Genome, sample, operation_day, relative_abundance, nucl_diversity, coverage, Code.x)
 
-diversity_abundance %>% ggplot(aes(x=nucl_diversity, y=relative_abundance, color=Code.x)) + geom_point() + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + theme_classic()
+diversity_abund_plot <- diversity_abundance %>% ggplot(aes(x=nucl_diversity, y=relative_abundance, color=Code.x)) + geom_point() + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + scale_x_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + labs(color="Genome Lineage") + ylab("% Relative Abundance") + xlab("Nucleotide Diversity π") + theme_classic() + theme(axis.title.y=element_text(face="bold"), axis.title.x=element_text(face="bold"), legend.title=element_text(face="bold"), legend.position=c(.9, .55))
 
-diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Genome)) + geom_point() + facet_wrap(~ Code, nrow=2) + theme_bw() + theme(legend.position = "none")
+diversity_faceted <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Genome)) + geom_point() + facet_wrap(~ Code, nrow=2) + theme_bw() + theme(legend.position = "none") + xlab("Operation Day") + ylab("Nucleotide Diversity π") + theme(axis.title.y=element_text(face="bold"), axis.title.x=element_text(face="bold"))
 
 flanking_abund_div_grid <- plot_grid(flanking_abundance, flanking_nucleotide_diversity, labels=c("B", "C"), ncol=1)
+flanking_abund_div_grid
+
+supp_div_abund <- plot_grid(diversity_abund_plot, diversity_faceted, ncol=1)
+supp_div_abund
 
 ggsave("figs/flanking-abund-div-grid.png", flanking_abund_div_grid, width=10, height=6, units=c("in"))
 
-flanking_nucleotide_diversity
+ggsave("figs/flanking-abund-div-facets-supp.png", supp_div_abund, width=12, height=6, units=c("in"))
+
