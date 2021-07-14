@@ -31,3 +31,23 @@ uw_genes_table %>%
   summarise(sum_SNV = sum(SNV_count))
            
 uw_nucl_div_table %>% ggplot(aes(x=sample, y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_wrap(~ reference) # nucl div of all genes not separated by category
+
+uw_genes_table$gene <- gsub("gnl\\|X\\|", "", uw_genes_table$gene)
+colnames(uw_genes_table) <- c("reference", "sample", "locus_tag", "coverage", "SNV_count", "nucl_diversity")
+
+#################################
+# COGs CSV from AcDiv project for defining groups of genes that are core, core among Accumulibacter, and accessory reciprocally in UW1 and UW3
+#################################
+
+cog_table <- read.csv("results/pangenomics/UW1_UW3_COGS_TAGS_TABLE.csv")
+
+uw_cog_diversity_table <- left_join(uw_genes_table, cog_table, by="locus_tag") %>% 
+  select(reference.x, sample, locus_tag, coverage, SNV_count, nucl_diversity, label) %>% 
+  drop_na()
+
+colnames(uw_cog_diversity_table)[1] <- c("reference")
+
+uw_div_genes_table <- left_join(uw_cog_diversity_table, metagenome_info) %>% 
+  select(reference, operation_day, locus_tag, coverage, SNV_count, nucl_diversity, label)
+
+uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_grid(vars(label), vars(reference)) + theme_bw()
