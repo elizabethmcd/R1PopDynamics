@@ -50,4 +50,6 @@ colnames(uw_cog_diversity_table)[1] <- c("reference")
 uw_div_genes_table <- left_join(uw_cog_diversity_table, metagenome_info) %>% 
   select(reference, operation_day, locus_tag, coverage, SNV_count, nucl_diversity, label)
 
-uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_grid(vars(label), vars(reference)) + theme_bw()
+uw_div_genes_plot <- uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_grid(vars(label), vars(reference)) + scale_y_continuous(breaks=seq(0, 0.05, 0.005)) + ylab("Nucleotide Diversity") + xlab("Operation Day") +  theme_bw()
+
+ggsave("figs/UW1-UW3-genes-diversity-time-series.png", uw_div_genes_plot, width=9, height=7, units=c("in"))
