@@ -110,11 +110,15 @@ flanking_abund_div_grid
 supp_div_abund <- plot_grid(diversity_abund_plot, diversity_faceted, ncol=1)
 supp_div_abund
 
-diversity_table_final %>% ggplot(aes(x=d_prime_mean, y=r2_mean)) + geom_point(aes(color=Code)) + geom_smooth(method="lm", se=TRUE, color="black") + ylab(expression(r^2)) + xlab("D'") + scale_color_manual(values=manual_brewer_palette) + theme_bw()
+recombination_plot <- diversity_table_final %>% ggplot(aes(x=d_prime_mean, y=r2_mean)) + geom_point(aes(color=Code)) + geom_smooth(method="lm", se=TRUE, color="black") + ylab(expression(r ^2)) + xlab("D'") + labs(color="Genome Lineage") + scale_color_manual(values=manual_brewer_palette) + theme_bw() + theme(legend.position=c(.15, .7))
+recombination_plot
 
 ggsave("figs/flanking-abund-div-grid.png", flanking_abund_div_grid, width=10, height=6, units=c("in"))
 
 ggsave("figs/flanking-abund-div-facets-supp.png", supp_div_abund, width=12, height=6, units=c("in"))
+
+ggsave("figs/recombination-comparisons.png", recombination_plot, width=10, height=6, units=c("in"))
+
 
 
 

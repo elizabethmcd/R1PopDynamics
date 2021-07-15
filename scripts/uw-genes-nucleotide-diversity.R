@@ -50,6 +50,14 @@ colnames(uw_cog_diversity_table)[1] <- c("reference")
 uw_div_genes_table <- left_join(uw_cog_diversity_table, metagenome_info) %>% 
   select(reference, operation_day, locus_tag, coverage, SNV_count, nucl_diversity, label)
 
-uw_div_genes_plot <- uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_grid(vars(label), vars(reference)) + scale_y_continuous(breaks=seq(0, 0.05, 0.005)) + ylab("Nucleotide Diversity") + xlab("Operation Day") +  theme_bw()
+uw_div_genes_table$label <- factor(uw_div_genes_table$label, levels=c("core", "acc_core", "accessory"))
+
+uw.labs <- c("UW1 IIA", "UW3 IA")
+names(uw.labs) <- c("UW1", "UW3")
+genes.labs <- c("Core", "Accumulibacter Core", "Accessory")
+names(genes.labs) <- c("core", "acc_core", "accessory")
+
+uw_div_genes_plot <- uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), y=nucl_diversity)) + geom_jitter(alpha=0.2) + facet_grid(rev(vars(label)), switch='y', vars(reference), labeller=labeller(label=genes.labs, reference=uw.labs)) + scale_y_continuous(breaks=seq(0, 0.05, 0.005), position="right") + ylab("Nucleotide Diversity π \n") + xlab("\n Operation Day") + theme_bw() + theme(strip.placement = "outside")
+uw_div_genes_plot
 
 ggsave("figs/UW1-UW3-genes-diversity-time-series.png", uw_div_genes_plot, width=9, height=7, units=c("in"))
