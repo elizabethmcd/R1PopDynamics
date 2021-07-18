@@ -104,7 +104,7 @@ diversity_abund_plot <- diversity_abundance %>% ggplot(aes(x=nucl_diversity, y=r
 
 diversity_faceted <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Genome)) + geom_point() + facet_wrap(~ Code, nrow=2) + theme_bw() + theme(legend.position = "none") + xlab("Operation Day") + ylab("Nucleotide Diversity π") + theme(axis.title.y=element_text(face="bold"), axis.title.x=element_text(face="bold"))
 
-flanking_abund_div_grid <- plot_grid(flanking_abundance, flanking_nucleotide_diversity, labels=c("B", "C"), ncol=1)
+flanking_abund_div_grid <- plot_grid(flanking_abundance, flanking_nucleotide_diversity, labels=c("A", "B"), ncol=1)
 flanking_abund_div_grid
 
 supp_div_abund <- plot_grid(diversity_abund_plot, diversity_faceted, ncol=1)
