@@ -61,3 +61,15 @@ uw_div_genes_plot <- uw_div_genes_table %>% ggplot(aes(x=factor(operation_day), 
 uw_div_genes_plot
 
 ggsave("figs/UW1-UW3-genes-diversity-time-series.png", uw_div_genes_plot, width=9, height=7, units=c("in"))
+
+#################################
+# CRISPR Diveristy in UW3 
+#################################
+
+uw3_crispr <- uw_genes_table %>% 
+  filter(reference == 'UW3') %>% 
+  filter(locus_tag == 'PEBOPBNB_2_544' | locus_tag == 'PEBOPBNB_2_545' | locus_tag == 'PEBOPBNB_2_546' | locus_tag == 'PEBOPBNB_2_547' | locus_tag == 'PEBOPBNB_2_548' | locus_tag == 'PEBOPBNB_2_549' | locus_tag == 'PEBOPBNB_2_551')
+
+uw3_crispr %>% ggplot(aes(x=locus_tag, y=coverage)) + geom_point() + facet_wrap(~ sample, scales = "free", ncol=2)
+
+uw3_crispr %>% ggplot(aes(x=locus_tag, y=nucl_diversity)) + geom_point() + facet_wrap(~ sample, ncol=2)
