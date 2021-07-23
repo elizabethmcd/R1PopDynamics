@@ -133,11 +133,13 @@ ampvis2_obj <- phyloseq_to_ampvis2(ps2)
 r1_genus_plot <- amp_heatmap(ampvis2_obj, tax_aggregate = "Genus", group_by="operation_day", tax_add="Phylum", tax_show=8, plot_values = FALSE, plot_legendbreaks=c(0.1,1,10,60)) + scale_y_discrete(labels=c("Actinobacteria; Tetrasphaera", "Actinobacteria; Leucobacter", "Proteobacteria; Brevundimonas", "Proteobacteria; Diaphorobacter", "Proteobacteria; Pseudoxanthomonas", "Proteobacteria; Gemmobacter", "Bacteroidetes; Chryseobacterium", "Candidatus Accumulibacter")) + theme(axis.text.y = element_text(face="bold.italic", size=6), legend.position="right") + theme(axis.text.x=element_text(angle=80, size=6, vjust=1))
 r1_genus_plot
 
-amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=20, plot_values=FALSE, group_by="operation_day") + theme(axis.text.y=element_blank())
+acc_asv_heatmap <- amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=2, plot_values=FALSE, group_by="operation_day", plot_legendbreaks=c(0.1,1,10,60)) + scale_y_discrete(labels=c("Ca. Accumulibacter ASV2", "Ca. Accumulibacter ASV1"), expand=c(0,0)) + theme(axis.text.x=element_text(angle=80, size=6, vjust=1), axis.text.y=element_text(size=8))
 
 amp_boxplot(ampvis2_obj, tax_show=8)
 
 ggsave(filename="figs/r1-ampvis2-genus-plot-heatmap.png", r1_genus_plot, width=16, height=3, units=c("in"))
+
+ggsave(filename="figs/acc-asvs-heatmap.png", acc_asv_heatmap, width=9, height=3, units=c("in"))
 
 p1 <- plot_grid(r1_genus_plot, shannon_timeseries, ncol=1, labels=c("A", "B"), label_size=10, vjust=1)
 
