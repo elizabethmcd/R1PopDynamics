@@ -182,3 +182,5 @@ new_flanking_grid
 flanking_grid_v2 <- plot_grid(p_data, new_flanking_grid, labels=c("A"), ncol=1, rel_heights = c(1.3,2))
 
 ggsave("~/Desktop/flanking-figure.png", flanking_grid_v2, width=17, height=11, units=c("in"))
+
+write.csv(diversity_table_final, "results/R1R2-inStrain-diversity-table.csv", quote=FALSE, row.names = FALSE)
