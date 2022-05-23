@@ -166,10 +166,13 @@ clade_data <- operation.m %>% ggplot(aes(x=operation_day, y=value, group=variabl
 
 clade_data
 
-r1_dynamics <- p_data / clade_data
+r1_dynamics <- p_data / r1_genus_plot / clade_data
+r1_dynamics
 r2 <- r1_dynamics + plot_annotation(tag_levels="A", tag_sep=".") & theme(plot.tag=element_text(size=16, face="bold", hjust=0.1, vjust=0.2))
 r2
+r1_project_grid <- plot_grid(r2, p1, ncol=1, rel_heights=c(1.5,1))
 
-r2
+
+ggsave("figs/r1-project-grid.png", r2, width=50, height=30, units=c("cm"))
 
 ggsave("figs/R1_2010_2013_p_clade_data_modified.png", r2, width=17, height=10, units=c("in"))

@@ -141,6 +141,8 @@ ggsave(filename="figs/r1-ampvis2-genus-plot-heatmap.png", r1_genus_plot, width=1
 
 ggsave(filename="figs/acc-asvs-heatmap.png", acc_asv_heatmap, width=9, height=3, units=c("in"))
 
-p1 <- plot_grid(r1_genus_plot, shannon_timeseries, ncol=1, labels=c("A", "B"), label_size=10, vjust=1)
+p1 <- plot_grid(r1_genus_plot, shannon_timeseries, ncol=1, labels=c("C", "D"), label_size=10, vjust=1)
+
+p1
 
 ggsave(filename="figs/16S-heatmap-shannon-grid.png", p1, height=4, width=10, units=c("in"))
