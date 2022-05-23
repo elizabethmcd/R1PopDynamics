@@ -109,6 +109,8 @@ colnames(diversity_table_filtered)[1] <- "Genome"
 diversity_table_info <- left_join(diversity_table_filtered, metadata)
 diversity_table_final <- left_join(diversity_table_info, metagenome_info)
 
+write.csv(diversity_table_final, "results/SNV_diversity/R1-diversity-table.csv", row.names = FALSE, quote = FALSE)
+
 flanking_nucleotide_diversity <- diversity_table_final %>% ggplot(aes(x=as_factor(operation_day), y=nucl_diversity, color=Code)) + geom_point(size=3, alpha=0.8) + scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + scale_y_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + ylab("Nucleotide Diveristy π") + xlab("Operation Day") + labs(color="Genome Lineage") + theme_classic()  + theme(axis.text.y=element_text(size=10), axis.text.x=element_text(size=10), axis.title.y=element_text(size=12, face="bold"), axis.title.x=element_text(size=12, face="bold"), legend.title=element_text(face="bold"))
 flanking_nucleotide_diversity
 
