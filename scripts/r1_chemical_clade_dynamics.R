@@ -4,6 +4,8 @@ library(reshape2)
 library(viridis)
 library(patchwork)
 library(cowplot)
+library(ggbeeswarm)
+library(ggpubr)
 
 # R1R2 metadata
 
@@ -162,9 +164,54 @@ clade_operation <- qPCR_metadata %>% select(Clade.IA, Clade.IIA, operation_day)
 operation.m <- melt(clade_operation,id.vars="operation_day",measure.vars=c("Clade.IA", "Clade.IIA"))
 operation.m$operation_day <- as.numeric(operation.m$operation_day)
 
-clade_data <- operation.m %>% ggplot(aes(x=operation_day, y=value, group=variable)) + geom_point(size=1.4) + geom_line(aes(linetype=variable), size=1.4) + scale_linetype_manual(values=c("solid", "twodash"), labels=c("Clade IA", "Clade IIA")) + scale_x_continuous(breaks=seq(0,1220, by=30), expand=c(0,0), limits=c(0,1220)) + scale_y_continuous(limits=c(0,1.5e7), breaks=seq(0,1.5e7, 2.5e6), labels=c("0","2.5e+06", "5.0e+06", "7.5e+06", "1.0e+07", "1.25e+07", "1.5e+07")) + xlab("\nOperation Day") + ylab("Copies/ng DNA") + theme_classic() + theme(axis.title.x=element_text(size=14, face="bold"), axis.title.y=element_text(size=14, face="bold"), legend.title=element_blank(), legend.position=c(0.15,0.9), legend.text=element_text(size=12),axis.text.x=element_text(size=11), axis.text.y=element_text(size=12))
+clade_data <- operation.m %>% ggplot(aes(x=operation_day, y=value, group=variable)) + geom_point(size=1.7) + geom_line(aes(linetype=variable), size=1.4) + scale_linetype_manual(values=c("solid", "twodash"), labels=c("Clade IA", "Clade IIA")) + scale_x_continuous(breaks=seq(0,1220, by=30), expand=c(0,0), limits=c(0,1220)) + scale_y_continuous(limits=c(0,1.5e7), breaks=seq(0,1.5e7, 2.5e6), labels=c("0","2.5e+06", "5.0e+06", "7.5e+06", "1.0e+07", "1.25e+07", "1.5e+07")) + xlab("\nOperation Day") + ylab("Copies/ng DNA") + theme_classic() + theme(axis.title.x=element_text(size=14, face="bold"), axis.title.y=element_text(size=14, face="bold"), legend.title=element_blank(), legend.position=c(0.15,0.9), legend.text=element_text(size=12),axis.text.x=element_text(size=11), axis.text.y=element_text(size=12))
 
 clade_data
+
+# sampling chart 
+# 16S samples information 
+amplicon_samples <- read_excel("sample_extractions/Sample-Extractions-Status-Sheet.xlsx") %>%
+  mutate(operation_day = Sample_Name) %>% 
+  mutate(method = c("16S_sequencing")) %>% 
+  select(operation_day, method)
+amplicon_samples$operation_day <- gsub("R1-", "", amplicon_samples$operation_day)
+
+metagenome_samples <- read.csv("metadata/metagenome_information/R1_Flanking_Metageomes_Information.csv") %>% 
+  mutate(operation_day = sample) %>% 
+  mutate(method = c("Metagenomes")) %>% 
+  select(operation_day, method) 
+
+qpcr_samples <- sub_qPCR %>%
+  mutate(operation_day = as.character(Date)) %>% 
+  mutate(method = c("qPCR")) %>% 
+  select(operation_day, method)
+
+all_samples <- rbind(amplicon_samples, metagenome_samples, qpcr_samples)
+colnames(all_samples) <- c("Date", "method")
+
+ts_dates <- sub_r1_clean %>% 
+  select(Date, operation_day, percent_P_removal) %>% 
+  mutate(Date = as.character(Date))
+
+all_samples_dates <- left_join(all_samples, ts_dates) %>% 
+  select(Date, operation_day, method)
+sampling_dates_modf <- read.csv('metadata/all_sampling_dates_modf.csv')
+sampling_dates_modf$method <- factor(all_samples_dates$method, levels=c("16S_sequencing", "qPCR", "Metagenomes"))
+
+write.csv(all_samples_dates, "metadata/all_sampling_dates.csv", quote=FALSE, row.names = FALSE)
+
+sampling_chart <- sampling_dates_modf %>% 
+  ggplot(aes(x = operation_day, y=fct_rev(method))) +
+  geom_beeswarm(aes(color=method), size=3) +
+  theme_bw() +
+  scale_y_discrete(labels=c("Metagenomic \n Sequencing", "ppk1 qPCR", "16S rRNA \n Amplicon Sequencing")) +
+  theme(axis.title.y=element_blank(), axis.title.x=element_blank(), axis.text.y=element_text(face="bold", size=10), legend.position=c("none"), axis.text.x=element_text(size=11)) +
+  scale_color_brewer(palette=c("Paired")) + 
+  scale_x_continuous(breaks=seq(0,1220, by=30), expand=c(0,0), limits=c(0,1220))
+sampling_chart
+
+
+# grid figures 
 
 r1_dynamics <- p_data / r1_genus_plot / clade_data
 r1_dynamics
@@ -176,3 +223,9 @@ r1_project_grid <- plot_grid(r2, p1, ncol=1, rel_heights=c(1.5,1))
 ggsave("figs/r1-project-grid.png", r2, width=50, height=30, units=c("cm"))
 
 ggsave("figs/R1_2010_2013_p_clade_data_modified.png", r2, width=17, height=10, units=c("in"))
+
+plot_grid(sampling_chart, p_data, r1_genus_plot, clade_data, ncol=1, rel_heights=c(.8,2,1.5,1), align=c("v"), axis="l")
+
+r1_full_grid <- sampling_chart / p_data / r1_genus_plot / clade_data + plot_layout(heights = c(.8, 2, 1.5, 1.6)) + plot_annotation(tag_levels= "A") & theme(plot.tag=element_text(size=16, face="bold", hjust=0.1, vjust=0.2))
+
+ggsave("figs/r1_full_grid.png", r1_full_grid, width=55, height=30, units=c("cm"))
