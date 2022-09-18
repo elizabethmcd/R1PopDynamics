@@ -8,6 +8,7 @@ library(vegan)
 library(tidyverse)
 library(patchwork)
 library(cowplot)
+library(ggpubr)
 
 # before starting the dada2 workflow, samples must be demultiplexed, primers/adapters are removed, and the F and R files contain reads in matching order
 # this preprocessing script works through a time-series of samples from engineered bioreactors, amplified the 16S region using the V3-V4 primers/region, and was sequenced with the Illumina 2x300 chemistry (incorrectly, was supposed to be 2x250, but will be more to throw out)
@@ -114,6 +115,25 @@ sample_metadata$timepoint <- gsub(" ", "", sample_metadata$timepoint)
 # phyloseq object with metadata
 ps2 <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), sample_data(sample_metadata), tax_table(taxa))
 
+
+## export phyloseq object as dataframe for sharing in data repositories 
+# store ASV name
+dna <- Biostrings::DNAStringSet(taxa_names(ps2))
+names(dna) <- taxa_names(ps2)
+ps2 <- merge_phyloseq(ps2, dna)
+taxa_names(ps2) <- paste0("ASV", seq(ntaxa(ps2)))
+# otu table
+r1_otu <- as(otu_table(ps2), "matrix")
+if(taxa_are_rows(ps2)){r1_otu <- t(r1_otu)}
+r1_otu_df <- as.data.frame(r1_otu)
+# taxonomy table 
+r1_tax <- as(tax_table(ps2), "matrix")
+if(taxa_are_rows(ps2)){r1_tax <- t(r1_tax)}
+r1_tax_df <- as.data.frame(r1_tax)
+# write CSVs
+write.csv(r1_otu_df, "results/otu_tables/R1-16S-otu-table.csv", row.names = FALSE, quote = FALSE)
+write.csv(r1_tax_df, "results/otu_tables/R1-16S-tax-table.csv", row.names = FALSE, quote = FALSE)
+
 # Alpha diversity / Shannon diversity richness within samples
 
 shannon_timeseries <- plot_richness(ps2, x="operation_day", measure="Shannon") + scale_x_continuous(expand=c(0,0), limits=c(0,1200), breaks=seq(0,1175,30)) + xlab(label="Operation Day") + ylab('Shannon\n Alpha Diversity\n') + theme_bw() + theme(axis.title.x=element_text(face="bold", size=7), axis.title.y=element_text(face="bold", size=7), strip.background=element_blank(), strip.text.x=element_blank(), plot.title=element_text(size=12, face="bold"), axis.text.x=element_text(size=6), axis.text.y=element_text(size=6))
@@ -135,6 +155,8 @@ r1_genus_plot
 
 acc_asv_heatmap <- amp_heatmap(ampvis2_obj, tax_aggregate="OTU", tax_show=2, plot_values=FALSE, group_by="operation_day", plot_legendbreaks=c(0.1,1,10,60)) + scale_y_discrete(labels=c("Ca. Accumulibacter ASV2", "Ca. Accumulibacter ASV1"), expand=c(0,0)) + theme(axis.text.x=element_text(angle=80, size=6, vjust=1), axis.text.y=element_text(size=8))
 
+acc_asv_heatmap
+
 amp_boxplot(ampvis2_obj, tax_show=8)
 
 ggsave(filename="figs/r1-ampvis2-genus-plot-heatmap.png", r1_genus_plot, width=16, height=3, units=c("in"))
@@ -143,6 +165,10 @@ ggsave(filename="figs/acc-asvs-heatmap.png", acc_asv_heatmap, width=9, height=3,
 
 p1 <- plot_grid(r1_genus_plot, shannon_timeseries, ncol=1, labels=c("C", "D"), label_size=10, vjust=1)
 
-p1
+plot_grid(shannon_timeseries, acc_asv_heatmap, ncol=1, labels=c("A", "B", label_size=10, vjust=1, align_plots("v")))
+
+r1_16S_supp <- ggarrange(shannon_timeseries, acc_asv_heatmap, ncol=1, labels=c("A", "B"), align="v")
+
+ggsave(filename="figs/r1-16S-accASVs-shannon-supp.png", r1_16S_supp, height=15, width=25, units=c("cm"))
 
 ggsave(filename="figs/16S-heatmap-shannon-grid.png", p1, height=4, width=10, units=c("in"))

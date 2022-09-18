@@ -243,5 +243,11 @@ flanking_facet_p <- plot_grid(p_metag_faceted, flanking_abundance, flanking_nucl
 ggsave("figs/flanking_facet_grid_p.png", flanking_facet_p, width=40, height=15, units=c("cm"))
 
 
+# supplementary abundance and diversity, recombination comparisons 
+
+supp_abund_div_recomb <- ggarrange(diversity_abund_plot, recombination_plot, ncol=1, common.legend = TRUE, labels=c("A", "B"))
+ggsave(filename="figs/R1-supp-div-recomb.png", supp_abund_div_recomb, width=30, height=25, units=c("cm"))
+
+
 # output tables 
 write.csv(diversity_table_final, "results/R1R2-inStrain-diversity-table.csv", quote=FALSE, row.names = FALSE)
