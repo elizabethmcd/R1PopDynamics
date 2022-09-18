@@ -130,9 +130,11 @@ r1_otu_df <- as.data.frame(r1_otu)
 r1_tax <- as(tax_table(ps2), "matrix")
 if(taxa_are_rows(ps2)){r1_tax <- t(r1_tax)}
 r1_tax_df <- as.data.frame(r1_tax)
+r1_tax_df_names <- rownames_to_column(r1_tax_df, var="ASV")
+
 # write CSVs
 write.csv(r1_otu_df, "results/otu_tables/R1-16S-otu-table.csv", row.names = FALSE, quote = FALSE)
-write.csv(r1_tax_df, "results/otu_tables/R1-16S-tax-table.csv", row.names = FALSE, quote = FALSE)
+write.csv(r1_tax_df_names, "results/otu_tables/R1-16S-tax-table.csv", row.names = FALSE, quote = FALSE)
 
 # Alpha diversity / Shannon diversity richness within samples
 
