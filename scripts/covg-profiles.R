@@ -132,15 +132,16 @@ diversity_abundance <- left_join(diversity_table_final, rel_abundance_info, by=c
   select(Genome, sample, operation_day, relative_abundance, nucl_diversity, coverage, r2_mean, Code.x)
 
 diversity_abund_plot <- diversity_abundance %>% 
-  ggplot(aes(x=nucl_diversity, y=relative_abundance, color=Code.x)) + 
-  geom_point() + 
+  ggplot(aes(x=relative_abundance, y=nucl_diversity, color=Code.x)) + 
+  geom_point(size=2) + 
   facet_wrap(~ operation_day, nrow=2) +
   scale_color_manual(values=manual_brewer_palette, labels=c("Actinobacteria", "Alphaproteobacteria", "Bacteroidetes", "CAPIA", "CAPIIA", "Gammaproteobacteria", "Other Lineages", "EPV1 Phage")) + 
-  scale_x_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) + 
+  scale_y_continuous(expand=c(0,0), limits=c(0,.015), breaks=seq(0,.015,.0025)) +
+  scale_x_continuous(expand=c(0.05,0)) +
   labs(color="Genome Lineage") + 
-  ylab("% Relative Abundance") + 
-  xlab("Nucleotide Diversity π") + 
-  theme_bw() + theme(axis.title.y=element_text(face="bold"), axis.title.x=element_text(face="bold"), legend.title=element_text(face="bold"))
+  ylab("Nucleotide Diversity π") + 
+  xlab("% Relative Abundance") + 
+  theme_bw() + theme(axis.title.y=element_text(face="bold"), axis.title.x=element_text(face="bold"), legend.title=element_text(face="bold"), legend.position="bottom")
 
 diversity_abund_plot
 
@@ -247,6 +248,12 @@ ggsave("figs/flanking_facet_grid_p.png", flanking_facet_p, width=40, height=15, 
 
 supp_abund_div_recomb <- ggarrange(diversity_abund_plot, recombination_plot, ncol=1, common.legend = TRUE, labels=c("A", "B"))
 ggsave(filename="figs/R1-supp-div-recomb.png", supp_abund_div_recomb, width=30, height=25, units=c("cm"))
+
+# save as separate plots 
+
+ggsave("figs/R1-diversity-abundance-supp.png", diversity_abund_plot, width=25, height=20, units=c("cm"))
+
+ggsave("figs/R1-recombination-plot.png", recombination_plot, width=25, height=15, units=c("cm"))
 
 
 # output tables 
